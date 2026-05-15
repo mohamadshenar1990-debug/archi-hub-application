@@ -1,0 +1,191 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Archi Hub Design System */
+  --bg: #08080c;
+  --bg2: #0e0e14;
+  --bg3: #121218;
+  --bg4: #18181f;
+  --gold: #c9a84c;
+  --gold2: #e8c96a;
+  --gold-dim: rgba(201,168,76,.10);
+  --gold-border: rgba(201,168,76,.22);
+  --text: #f0ede8;
+  --text2: #a09d98;
+  --text3: #55534f;
+  --border: rgba(255,255,255,.06);
+  --border2: rgba(255,255,255,.11);
+
+  /* shadcn compatibility */
+  --background: #08080c;
+  --foreground: #f0ede8;
+  --card: rgba(12,12,18,.78);
+  --card-foreground: #f0ede8;
+  --popover: #0e0e14;
+  --popover-foreground: #f0ede8;
+  --primary: #c9a84c;
+  --primary-foreground: #08080c;
+  --secondary: #18181f;
+  --secondary-foreground: #f0ede8;
+  --muted: #18181f;
+  --muted-foreground: #a09d98;
+  --accent: rgba(201,168,76,.10);
+  --accent-foreground: #c9a84c;
+  --destructive: #ef4444;
+  --destructive-foreground: #f0ede8;
+  --border-color: rgba(255,255,255,.06);
+  --input: #18181f;
+  --ring: #c9a84c;
+  --radius: 0.875rem;
+  
+  --chart-1: #c9a84c;
+  --chart-2: #e8c96a;
+  --chart-3: #a09d98;
+  --chart-4: #55534f;
+  --chart-5: #18181f;
+}
+
+@theme inline {
+  --font-sans: var(--font-syne), system-ui, sans-serif;
+  --font-mono: var(--font-dm-mono), 'Courier New', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border-color);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground;
+    background-color: var(--bg);
+  }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subtlePulse {
+  0%, 100% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    opacity: 0.16;
+  }
+  50% {
+    opacity: 0.26;
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.65s ease-out;
+}
+
+.animate-subtlePulse {
+  animation: subtlePulse 12s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 9s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(201,168,76,.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201,168,76,.35);
+}
+
+/* Selection */
+::selection {
+  background: rgba(201,168,76,.3);
+  color: #f0ede8;
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid rgba(201,168,76,.5);
+  outline-offset: 2px;
+}
+
+/* Glass card styles */
+.glass-card {
+  background: rgba(12,12,18,.78);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px;
+}
+
+.gold-card {
+  background: rgba(14,12,4,.82);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(201,168,76,.20);
+  border-radius: 14px;
+  box-shadow: inset 0 0 28px rgba(201,168,76,.04);
+}
+
+/* Gold gradient text */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #c9a84c 0%, #e8c96a 50%, #c9a84c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
