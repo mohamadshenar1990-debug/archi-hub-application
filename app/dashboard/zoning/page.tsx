@@ -1,81 +1,260 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import { PageHeader } from '@/components/page-header'
-import { GlassCard } from '@/components/glass-card'
-
-const analysisCards = [
-  { title: 'Circulation', description: 'Primary spine connects all zones. Secondary loop through courtyard provides informal flow.', icon: '↔️' },
-  { title: 'Privacy Gradient', description: 'Public to private transition from entry through courtyard to bedrooms.', icon: '🔒' },
-  { title: 'Adjacency Priority', description: 'Kitchen-dining-family cluster. Master suite isolated with garden access.', icon: '🔗' },
-]
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Sparkles, RefreshCw } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { GlassCard } from "@/components/glass-card";
+import { HistoryPanel } from "@/components/history-panel";
+import { useToast } from "@/components/toast-provider";
+import { useProjectStore, ZoningDiagram } from "@/lib/store";
 
 export default function ZoningPage() {
+  const { showToast } = useToast();
+  const {
+    zoningDiagram,
+    generateZoning,
+    completionStatus,
+    programZones,
+    clientBrief,
+  } = useProjectStore();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = () => {
+    if (completionStatus["program"] === 0) {
+      showToast("Please generate the program first", "info");
+      return;
+    }
+    setIsGenerating(true);
+    showToast("Generating zoning diagram based on your program...", "info");
+    setTimeout(() => {
+      generateZoning();
+      setIsGenerating(false);
+      showToast("Zoning diagram generated", "success");
+    }, 2000);
+  };
+
+  // Dynamic positions based on generated diagram or defaults
+  const zones = zoningDiagram?.zones || [
+    { name: "PUBLIC", position: { x: 50, y: 20 }, size: 55, connections: ["SEMI-PVT", "SERVICE"] },
+    { name: "SEMI-PVT", position: { x: 25, y: 45 }, size: 45, connections: ["PUBLIC", "PRIVATE", "COURTYARD"] },
+    { name: "PRIVATE", position: { x: 75, y: 50 }, size: 50, connections: ["SEMI-PVT", "COURTYARD"] },
+    { name: "SERVICE", position: { x: 15, y: 75 }, size: 38, connections: ["PUBLIC", "PRIVATE"] },
+    { name: "LEISURE", position: { x: 85, y: 75 }, size: 38, connections: ["SEMI-PVT", "COURTYARD"] },
+    { name: "COURTYARD", position: { x: 50, y: 55 }, size: 40, connections: ["SEMI-PVT", "PRIVATE", "LEISURE"] },
+  ];
+
+  const analysisCards = [
+    {
+      title: "Circulation",
+      description: zoningDiagram?.circulationType === "Separated Flow"
+        ? "Separate circulation paths for family and guests. Service access isolated."
+        : "Primary spine connects all zones. Secondary loop through courtyard provides informal flow.",
+      icon: "↔️",
+    },
+    {
+      title: "Privacy Gradient",
+      description: zoningDiagram?.privacyGradient === "Strong Gradient"
+        ? "Clear separation between public and private zones with buffer spaces."
+        : "Public to private transition from entry through courtyard to bedrooms.",
+      icon: "🔒",
+    },
+    {
+      title: "Adjacency Priority",
+      description: zoningDiagram?.adjacencyPriority === "Family-Centric"
+        ? "Kitchen-dining-family cluster prioritized. Master suite with garden access."
+        : "Kitchen-dining-family cluster. Master suite isolated with garden access.",
+      icon: "🔗",
+    },
+  ];
+
+  // Calculate SVG positions
+  const getCircleProps = (zone: typeof zones[0], index: number) => {
+    const cx = (zone.position.x / 100) * 600;
+    const cy = (zone.position.y / 100) * 350;
+    const r = zone.size;
+    const isGold = zone.name === "PUBLIC" || zone.name === "COURTYARD";
+    return { cx, cy, r, isGold };
+  };
+
   return (
     <div>
-      <PageHeader 
-        title="Zoning & Planning" 
-        description="Spatial organization and adjacency relationships"
-      />
+      <div className="flex items-center justify-between mb-6">
+        <PageHeader
+          title="Zoning & Planning"
+          description="Spatial organization and adjacency relationships"
+        />
+        <HistoryPanel<ZoningDiagram>
+          section="zoning"
+          renderItem={(data) => (
+            <div className="text-xs">
+              <p>{data.zones.length} zones configured</p>
+              <p>Circulation: {data.circulationType}</p>
+            </div>
+          )}
+        />
+      </div>
+
+      {/* Generate Button */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.65, ease: "easeOut" }}
+        className="mb-6"
+      >
+        <div
+          className="p-4 rounded-2xl flex items-center justify-between"
+          style={{
+            background: "rgba(12,12,18,.78)",
+            border: "1px solid rgba(201,168,76,.22)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-[#c9a84c]" />
+            <span className="text-sm text-[#a09d98]">
+              {zoningDiagram
+                ? `Diagram based on ${programZones.length} program zones, ${clientBrief.privacy} privacy`
+                : "Generate zoning diagram based on your program"}
+            </span>
+          </div>
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+            style={{
+              background: "linear-gradient(135deg, #c9a84c 0%, #e8c96a 100%)",
+              color: "#08080c",
+            }}
+          >
+            {isGenerating ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Generating...
+              </>
+            ) : zoningDiagram ? (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Regenerate
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Generate Zoning
+              </>
+            )}
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Completion indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="mb-6"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-mono text-[#55534f]">COMPLETION</span>
+          <span className="text-xs font-mono text-[#c9a84c]">{completionStatus["zoning"]}%</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-white/[.06] overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${completionStatus["zoning"]}%` }}
+            transition={{ duration: 0.5 }}
+            className="h-full rounded-full"
+            style={{
+              background: "linear-gradient(90deg, #c9a84c, #e8c96a)",
+              boxShadow: completionStatus["zoning"] > 0 ? "0 0 10px rgba(201,168,76,.5)" : "none",
+            }}
+          />
+        </div>
+      </motion.div>
 
       {/* Bubble Diagram */}
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.65, ease: 'easeOut' }}
+        transition={{ duration: 0.65, ease: "easeOut", delay: 0.15 }}
         className="glass-card p-8 mb-6"
       >
-        <h3 className="text-sm font-mono text-[#55534f] uppercase tracking-wider mb-6">Bubble Diagram</h3>
-        <svg 
-          viewBox="0 0 600 350" 
-          className="w-full h-auto"
-          style={{ maxHeight: '350px' }}
-        >
+        <h3 className="text-sm font-mono text-[#55534f] uppercase tracking-wider mb-6">
+          Bubble Diagram
+        </h3>
+        <svg viewBox="0 0 600 350" className="w-full h-auto" style={{ maxHeight: "350px" }}>
           {/* Connection Lines */}
-          <line x1="300" y1="120" x2="180" y2="200" stroke="rgba(201,168,76,.3)" strokeWidth="2" />
-          <line x1="300" y1="120" x2="420" y2="200" stroke="rgba(201,168,76,.3)" strokeWidth="2" />
-          <line x1="300" y1="120" x2="300" y2="280" stroke="rgba(201,168,76,.3)" strokeWidth="2" />
-          <line x1="180" y1="200" x2="120" y2="280" stroke="rgba(255,255,255,.15)" strokeWidth="1" />
-          <line x1="180" y1="200" x2="300" y2="280" stroke="rgba(255,255,255,.15)" strokeWidth="1" />
-          <line x1="420" y1="200" x2="480" y2="280" stroke="rgba(255,255,255,.15)" strokeWidth="1" />
-          <line x1="420" y1="200" x2="300" y2="280" stroke="rgba(255,255,255,.15)" strokeWidth="1" />
+          {zones.map((zone, i) =>
+            zone.connections.map((targetName) => {
+              const target = zones.find((z) => z.name === targetName);
+              if (!target) return null;
+              const x1 = (zone.position.x / 100) * 600;
+              const y1 = (zone.position.y / 100) * 350;
+              const x2 = (target.position.x / 100) * 600;
+              const y2 = (target.position.y / 100) * 350;
+              const isGoldLine = zone.name === "PUBLIC" || zone.name === "COURTYARD";
+              return (
+                <line
+                  key={`${zone.name}-${targetName}`}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke={isGoldLine ? "rgba(201,168,76,.3)" : "rgba(255,255,255,.15)"}
+                  strokeWidth={isGoldLine ? 2 : 1}
+                />
+              );
+            })
+          )}
 
-          {/* PUBLIC - Center Top (Gold) */}
-          <circle cx="300" cy="90" r="55" fill="rgba(201,168,76,.15)" stroke="#c9a84c" strokeWidth="2" />
-          <text x="300" y="85" textAnchor="middle" fill="#c9a84c" fontSize="10" fontWeight="600" fontFamily="monospace">PUBLIC</text>
-          <text x="300" y="100" textAnchor="middle" fill="#f0ede8" fontSize="12">Majlis</text>
-
-          {/* SEMI-PVT - Left */}
-          <circle cx="150" cy="200" r="45" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
-          <text x="150" y="195" textAnchor="middle" fill="#a09d98" fontSize="9" fontWeight="600" fontFamily="monospace">SEMI-PVT</text>
-          <text x="150" y="210" textAnchor="middle" fill="#f0ede8" fontSize="11">Family</text>
-
-          {/* SERVICE - Bottom Left */}
-          <circle cx="100" cy="300" r="38" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.12)" strokeWidth="1" />
-          <text x="100" y="295" textAnchor="middle" fill="#55534f" fontSize="9" fontWeight="600" fontFamily="monospace">SERVICE</text>
-          <text x="100" y="310" textAnchor="middle" fill="#a09d98" fontSize="10">Staff</text>
-
-          {/* PRIVATE - Right */}
-          <circle cx="450" cy="200" r="50" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
-          <text x="450" y="195" textAnchor="middle" fill="#a09d98" fontSize="9" fontWeight="600" fontFamily="monospace">PRIVATE</text>
-          <text x="450" y="210" textAnchor="middle" fill="#f0ede8" fontSize="11">Bedrooms</text>
-
-          {/* LEISURE - Bottom Right */}
-          <circle cx="500" cy="300" r="38" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.12)" strokeWidth="1" />
-          <text x="500" y="295" textAnchor="middle" fill="#55534f" fontSize="9" fontWeight="600" fontFamily="monospace">LEISURE</text>
-          <text x="500" y="310" textAnchor="middle" fill="#a09d98" fontSize="10">Cinema</text>
-
-          {/* COURTYARD - Center (Dashed Gold) */}
-          <circle cx="300" cy="220" r="48" fill="rgba(201,168,76,.05)" stroke="#c9a84c" strokeWidth="1.5" strokeDasharray="6 4" />
-          <text x="300" y="215" textAnchor="middle" fill="#c9a84c" fontSize="9" fontWeight="600" fontFamily="monospace">COURTYARD</text>
-          <text x="300" y="230" textAnchor="middle" fill="#f0ede8" fontSize="11">Central</text>
+          {/* Zone Circles */}
+          {zones.map((zone, idx) => {
+            const { cx, cy, r, isGold } = getCircleProps(zone, idx);
+            const isDashed = zone.name === "COURTYARD";
+            return (
+              <g key={zone.name}>
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={r}
+                  fill={isGold ? "rgba(201,168,76,.15)" : "rgba(255,255,255,.05)"}
+                  stroke={isGold ? "#c9a84c" : "rgba(255,255,255,.2)"}
+                  strokeWidth={isGold ? 2 : 1.5}
+                  strokeDasharray={isDashed ? "6 4" : undefined}
+                />
+                <text
+                  x={cx}
+                  y={cy - 8}
+                  textAnchor="middle"
+                  fill={isGold ? "#c9a84c" : "#a09d98"}
+                  fontSize="9"
+                  fontWeight="600"
+                  fontFamily="monospace"
+                >
+                  {zone.name}
+                </text>
+                <text
+                  x={cx}
+                  y={cy + 8}
+                  textAnchor="middle"
+                  fill="#f0ede8"
+                  fontSize="11"
+                >
+                  {zone.name === "PUBLIC" ? "Majlis" : 
+                   zone.name === "SEMI-PVT" ? "Family" :
+                   zone.name === "PRIVATE" ? "Bedrooms" :
+                   zone.name === "SERVICE" ? "Staff" :
+                   zone.name === "LEISURE" ? "Cinema" : "Central"}
+                </text>
+              </g>
+            );
+          })}
         </svg>
       </motion.div>
 
       {/* Analysis Cards */}
       <div className="grid grid-cols-3 gap-4">
         {analysisCards.map((card, idx) => (
-          <GlassCard key={card.title} className="p-5" delay={(idx + 1) * 0.1}>
+          <GlassCard key={card.title} className="p-5" delay={0.25 + idx * 0.1}>
             <div className="flex items-start gap-3">
               <span className="text-2xl">{card.icon}</span>
               <div>
@@ -87,5 +266,5 @@ export default function ZoningPage() {
         ))}
       </div>
     </div>
-  )
+  );
 }
